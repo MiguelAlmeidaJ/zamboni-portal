@@ -25,31 +25,52 @@ export function formatPhone(value: unknown = ''): string {
 
 function parseDatabaseDate(value: unknown): Date | null {
   if (value instanceof Date) return value;
-  const parts = String(value || '').split(' ');
+
+  const parts = String(value || '').trim().split(/\s+/);
   const month = MONTHS.indexOf((parts[0] || '').toLowerCase());
+
   if (month < 0) return null;
-  return new Date(Number(parts[2]), month, Number(parts[1]), 12, 0, 0);
+
+  const [hour = 0, minute = 0, second = 0] =
+    (parts[3] || '00:00:00')
+      .split(':')
+      .map((part) => Number.parseInt(part, 10) || 0);
+
+  return new Date(Date.UTC(
+    Number(parts[2]),
+    month,
+    Number(parts[1]),
+    hour,
+    minute,
+    second
+  ));
 }
 
 export function formatDate(value: unknown): string {
   const date = parseDatabaseDate(value);
+
   if (!date || Number.isNaN(date.getTime())) return '';
-  return new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo' }).format(date);
+
+  // Emissão e vencimento são datas civis.
+  // Não devemos permitir que a conversão de timezone
+  // faça a data cair no dia anterior.
+  const day = String(date.getUTCDate()).padStart(2, '0');
+  const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+  const year = date.getUTCFullYear();
+
+  return `${day}/${month}/${year}`;
 }
 
 export function formatDateTime(value: unknown): string {
-  if (value instanceof Date) {
-    return new Intl.DateTimeFormat('pt-BR', {
-      timeZone: 'America/Sao_Paulo',
-      dateStyle: 'short',
-      timeStyle: 'short'
-    }).format(value);
-  }
+  const date = parseDatabaseDate(value);
 
-  const text = String(value || '');
-  const date = formatDate(text);
-  const time = text.split(' ')[3] || '';
-  return [date, time].filter(Boolean).join(' - ');
+  if (!date || Number.isNaN(date.getTime())) return '';
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    dateStyle: 'short',
+    timeStyle: 'short'
+  }).format(date);
 }
 
 export function formatMoney(value: unknown): string {

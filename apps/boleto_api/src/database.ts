@@ -51,7 +51,9 @@ export async function customerPortal(cnpj: string) {
       'SELECT SUM(Val_total) as Total FROM dbo.Boleto_Titulo_Ativo WHERE Cgc_Cpf_Cliente = @cnpj'
     ),
     requestFor(connection, cnpj).query(
-      'SELECT Data_Geracao FROM dbo.Boleto_Titulo_Ativo WHERE Cgc_Cpf_Cliente = @cnpj'
+      `SELECT MAX(Data_Geracao) AS Data_Geracao
+      FROM dbo.Boleto_Titulo_Ativo
+      WHERE Cgc_Cpf_Cliente = @cnpj`
     )
   ]);
 

@@ -47,7 +47,7 @@ export const config = {
     options: {
       encrypt: process.env.DB_ENCRYPT !== 'false',
       trustServerCertificate: process.env.DB_TRUST_CERTIFICATE !== 'false',
-      useUTC: false
+      useUTC: true
     },
     pool: { min: 0, max: 5, idleTimeoutMillis: 30000 }
   }
