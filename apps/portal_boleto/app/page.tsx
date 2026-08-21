@@ -153,7 +153,12 @@ function Login({ onSuccess }: { onSuccess: (data: PortalData) => void }) {
           {error && <div className="form-error" role="alert">{error}</div>}
           <button className="primary-button" disabled={loading}>{loading ? 'Consultando…' : 'Consultar boletos'}{!loading && <Icon name="arrow"/>}</button>
         </form>
-        <div className="help"><Icon name="phone"/><span>Precisa de ajuda?<strong>(32) 3462-0072</strong></span></div>
+        <div className="help"><Icon name="phone"/><span>Precisa de ajuda?
+          <strong>
+            <a href="tel:21999783600">
+              (21) 99978-3600
+            </a>
+          </strong></span></div>
       </section>
     </main>
   );
@@ -188,7 +193,7 @@ function Results({ data }: { data: PortalData }) {
         </div>
       </section>
 
-      <section className="support"><div className="support-icon"><Icon name="phone"/></div><div><small>Não encontrou o título que procura?</small><strong>Fale com o Setor de Cobrança</strong></div><a href="tel:+553234620072">(32) 3462-0072 <Icon name="arrow"/></a></section>
+      <section className="support"><div className="support-icon"><Icon name="phone"/></div><div><small>Não encontrou o título que procura?</small><strong>Fale com o Setor de Cobrança</strong></div><a href="tel:+5521999783600">(21) 99978-3600 <Icon name="arrow"/></a></section>
     </main>
   );
 }

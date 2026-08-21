@@ -202,7 +202,7 @@ const server = http.createServer(async (request, response) => {
       const authentication = await authenticate(cnpj, password);
       if (authentication === 'invalid_password') {
         await logAccess('log_falha', String(body.cnpj || ''), 'ERRO: Senha invalida');
-        json(response, request, 401, { erro: 'Senha inválida! Tente outra senha ou entre em contato com o Setor de Cobrança: (32) 3462-0072.' });
+        json(response, request, 401, { erro: 'Senha inválida! Tente outra senha ou entre em contato com o Setor de Cobrança: (21) 99978-3600.' });
         return;
       }
       if (authentication === 'not_found') {
