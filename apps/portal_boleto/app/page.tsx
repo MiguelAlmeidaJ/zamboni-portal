@@ -1,11 +1,27 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import type { FormEvent, ReactNode } from 'react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3331';
 
-type IconName = 'arrow' | 'building' | 'calendar' | 'check' | 'document' | 'eye' | 'lock' | 'logout' | 'phone' | 'shield';
+const BANK_IMAGES: Record<string, string> = {
+  '001': '/img/lg-brasil.jpg',
+  '033': '/img/lg-sant.jpg',
+  '104': '/img/lg-cx.jpg',
+  '237': '/img/lg-bra.jpg',
+  '336': '/img/lg-c6.jpg',
+  '341': '/img/lg-i.jpg',
+  '399': '/img/lg-hsb.jpg',
+  '422': '/img/lg-safra.jpg',
+  '655': '/img/lg-vot.jpg',
+  '707': '/img/lg-day.jpg',
+  '745': '/img/lg-citi.jpg',
+  '756': '/img/lg-sic.jpg'
+};
+
+type IconName = 'arrow' | 'building' | 'calendar' | 'check' | 'document' | 'lock' | 'logout' | 'phone' | 'shield';
 
 interface PortalData {
   cliente: {
@@ -26,13 +42,12 @@ interface PortalData {
   titulos: Array<{
     nossoNumero: string;
     empresa: string;
-    banco: { code: string; name: string; image: string };
+    banco: { code: string; name: string };
     emissao: string;
     vencimento: string;
     notasFiscais: string;
     valor: string;
     moraDia: string;
-    boletoUrl: string;
   }>;
 }
 
@@ -43,7 +58,6 @@ function Icon({ name }: { name: IconName }) {
     calendar: <><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 11h18"/></>,
     check: <path d="m5 12 4 4L19 6"/>,
     document: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 13h8M8 17h5"/></>,
-    eye: <><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></>,
     lock: <><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></>,
     logout: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></>,
     phone: <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6A19.79 19.79 0 0 1 2.12 4.18 2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.36 1.9.69 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.33 1.84.56 2.8.69A2 2 0 0 1 22 16.92Z"/>,
@@ -80,8 +94,8 @@ function Header({ authenticated, onLogout }: { authenticated: boolean; onLogout:
   return (
     <header className="topbar">
       <a className="brand" href="#inicio" aria-label="Zamboni Portal de Boletos">
-        <img src={`${API_URL}/img/zamboni-novo.webp`} alt="Zamboni" />
-        <span></span>
+        <Image className="brand-logo" src="/img/zamboni-novo.webp" alt="Zamboni" width={320} height={115} priority />
+        <span className="brand-divider"></span>
         <strong>Portal de boletos</strong>
       </a>
       <div className="topbar-actions">
@@ -118,11 +132,11 @@ function Login({ onSuccess }: { onSuccess: (data: PortalData) => void }) {
       <section className="hero-copy">
         <span className="eyebrow">Autoatendimento Zamboni</span>
         <h1>Seus boletos,<br/><em>sem complicação.</em></h1>
-        <p>Consulte títulos em aberto, acompanhe vencimentos e acesse seus boletos em poucos segundos.</p>
+        <p>Consulte títulos em aberto e acompanhe vencimentos em poucos segundos.</p>
         <div className="benefits">
           <div><span><Icon name="check"/></span><p><strong>Consulta rápida</strong><small>Todos os seus títulos em um só lugar</small></p></div>
           <div><span><Icon name="shield"/></span><p><strong>Acesso protegido</strong><small>Seus dados tratados com segurança</small></p></div>
-          <div><span><Icon name="document"/></span><p><strong>Boleto pronto</strong><small>Visualize e imprima quando precisar</small></p></div>
+          <div><span><Icon name="document"/></span><p><strong>Informações claras</strong><small>Acompanhe valores e dados de cobrança</small></p></div>
         </div>
       </section>
 
@@ -160,15 +174,14 @@ function Results({ data }: { data: PortalData }) {
       </section>
 
       <section className="titles-section">
-        <div className="section-heading"><div><span className="eyebrow">Cobranças</span><h2>Seus títulos</h2><p>Acompanhe os detalhes e acesse a segunda via.</p></div><span className="count-pill">{data.titulos.length} {data.titulos.length === 1 ? 'título' : 'títulos'}</span></div>
+        <div className="section-heading"><div><span className="eyebrow">Cobranças</span><h2>Seus títulos</h2><p>Acompanhe os detalhes das cobranças disponíveis.</p></div><span className="count-pill">{data.titulos.length} {data.titulos.length === 1 ? 'título' : 'títulos'}</span></div>
         <div className="title-list">
           {data.titulos.map((title) => (
             <article className="title-card" key={`${title.empresa}-${title.nossoNumero}`}>
-              <div className="bank"><div className="bank-logo">{title.banco.image ? <img src={`${API_URL}/img/${title.banco.image}`} alt={title.banco.name}/> : title.banco.name}</div><span className="available"><i></i>Disponível</span></div>
+              <div className="bank"><div className="bank-logo">{BANK_IMAGES[title.banco.code] ? <Image src={BANK_IMAGES[title.banco.code]} alt={title.banco.name} width={150} height={40} /> : title.banco.name}</div><span className="available"><i></i>Disponível</span></div>
               <div className="number"><small>Nosso número</small><strong>{title.nossoNumero}</strong><span>{title.empresa}</span></div>
               <div className="title-meta"><div><small>Emissão</small><strong>{title.emissao}</strong></div><div><small>Vencimento</small><strong>{title.vencimento}</strong></div><div><small>Nota(s) fiscal(is)</small><strong>{title.notasFiscais || '—'}</strong></div></div>
               <div className="amount"><small>Valor</small><strong>R$ {title.valor}</strong><span>Mora/dia: R$ {title.moraDia}</span></div>
-              <a className="view-button" href={title.boletoUrl} target="_blank" rel="noopener noreferrer"><Icon name="eye"/>Visualizar boleto</a>
             </article>
           ))}
           {!data.titulos.length && <div className="empty">Nenhum título disponível para visualização.</div>}

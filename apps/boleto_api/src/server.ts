@@ -151,36 +151,6 @@ function requireSession(request: IncomingMessage, response: ServerResponse) {
   return session;
 }
 
-async function proxyLegacy(
-  request: IncomingMessage,
-  response: ServerResponse,
-  targetPath: string,
-  requireAuthentication: boolean
-): Promise<void> {
-  if (requireAuthentication && !requireSession(request, response)) return;
-
-  const target = new URL(targetPath, config.legacyUrl);
-  const legacyResponse = await fetch(target, {
-    headers: {
-      'X-Internal-Token': config.legacyToken,
-      Accept: typeof request.headers.accept === 'string' ? request.headers.accept : '*/*'
-    },
-    redirect: 'manual',
-    signal: AbortSignal.timeout(config.httpRequestTimeout)
-  });
-  const headers: Record<string, string> = {};
-  ['content-type', 'location', 'cache-control'].forEach((name) => {
-    const value = legacyResponse.headers.get(name);
-    if (value) headers[name] = value;
-  });
-  response.writeHead(legacyResponse.status, {
-    ...securityHeaders,
-    ...headers,
-    'Cache-Control': 'no-store'
-  });
-  response.end(Buffer.from(await legacyResponse.arrayBuffer()));
-}
-
 const server = http.createServer(async (request, response) => {
   const url = new URL(request.url || '/', `http://${request.headers.host || 'localhost'}`);
 
@@ -258,21 +228,6 @@ const server = http.createServer(async (request, response) => {
     if (request.method === 'POST' && url.pathname === '/api/logout') {
       deleteSession(request);
       json(response, request, 200, { status: 'ok' }, { 'Set-Cookie': expiredSessionCookie() });
-      return;
-    }
-
-    if (request.method === 'GET' && url.pathname === '/boleto') {
-      await proxyLegacy(request, response, `/via2/cobi.php${url.search}`, true);
-      return;
-    }
-
-    if (request.method === 'GET' && url.pathname.startsWith('/include/')) {
-      await proxyLegacy(request, response, `/via2${url.pathname}${url.search}`, true);
-      return;
-    }
-
-    if (request.method === 'GET' && /^\/(img|css|js)\//.test(url.pathname)) {
-      await proxyLegacy(request, response, `/via2${url.pathname}${url.search}`, false);
       return;
     }
 

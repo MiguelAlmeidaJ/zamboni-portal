@@ -1,9 +1,0 @@
-.git
-.env*
-logs/*
-**/node_modules
-**/.next
-**/dist
-**/*.tsbuildinfo
-.pnpm-store
-npm-debug.log*

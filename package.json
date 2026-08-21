@@ -11,7 +11,6 @@
     "typecheck": "pnpm -r typecheck",
     "start": "pnpm --filter process_manager exec pm2-runtime start ../../ecosystem.config.cjs --env production",
     "pm2:start": "node scripts/pm2-start.cjs",
-    "pm2:takeover": "docker compose stop portal_boleto boleto_api && node scripts/pm2-start.cjs",
     "pm2:restart": "pnpm --filter process_manager exec pm2 restart ../../ecosystem.config.cjs --env production --update-env",
     "pm2:stop": "pnpm --filter process_manager exec pm2 stop ../../ecosystem.config.cjs",
     "pm2:status": "pnpm --filter process_manager exec pm2 status",

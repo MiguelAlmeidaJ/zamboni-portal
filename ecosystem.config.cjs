@@ -38,12 +38,12 @@ module.exports = {
       ...common,
       name: 'portal_boleto',
       script: 'apps/portal_boleto/node_modules/next/dist/bin/next',
-      args: `start apps/portal_boleto -p ${frontendPort} -H 127.0.0.1`,
+      args: `start apps/portal_boleto -p ${frontendPort} -H 0.0.0.0`,
       max_memory_restart: '512M',
       env_production: {
         NODE_ENV: 'production',
         PORT: String(frontendPort),
-        HOSTNAME: '127.0.0.1'
+        HOSTNAME: '0.0.0.0'
       }
     },
     {
@@ -54,7 +54,7 @@ module.exports = {
       env_production: {
         NODE_ENV: 'production',
         PORT: String(apiPort),
-        HOST: '127.0.0.1'
+        HOST: '0.0.0.0'
       }
     }
   ]

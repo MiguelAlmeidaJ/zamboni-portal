@@ -23,7 +23,7 @@ export function formatPhone(value: unknown = ''): string {
   return `(${phone.slice(0, 3)}) ${phone.slice(3, 7)}-${phone.slice(7, 11)}`;
 }
 
-function parseLegacyDate(value: unknown): Date | null {
+function parseDatabaseDate(value: unknown): Date | null {
   if (value instanceof Date) return value;
   const parts = String(value || '').split(' ');
   const month = MONTHS.indexOf((parts[0] || '').toLowerCase());
@@ -32,7 +32,7 @@ function parseLegacyDate(value: unknown): Date | null {
 }
 
 export function formatDate(value: unknown): string {
-  const date = parseLegacyDate(value);
+  const date = parseDatabaseDate(value);
   if (!date || Number.isNaN(date.getTime())) return '';
   return new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Sao_Paulo' }).format(date);
 }
@@ -59,38 +59,24 @@ export function formatMoney(value: unknown): string {
   }).format(Number(value || 0));
 }
 
-export function encryptLegacy(value: unknown, key = '7636846602'): string {
-  const input = Buffer.from(String(value), 'latin1');
-  const keyBytes = Buffer.from(String(key), 'latin1');
-  const output = Buffer.alloc(input.length);
-
-  for (let index = 0; index < input.length; index += 1) {
-    const keyIndex = ((index % keyBytes.length) || keyBytes.length) - 1;
-    output[index] = (input[index] + keyBytes[keyIndex]) & 0xff;
-  }
-
-  return encodeURIComponent(output.toString('base64'));
-}
-
-const BANKS: Record<string, readonly [string, string]> = {
-  '001': ['Banco do Brasil', 'lg-brasil.jpg'],
-  '033': ['Santander', 'lg-sant.jpg'],
-  '104': ['Caixa', 'lg-cx.jpg'],
-  '237': ['Bradesco', 'lg-bra.jpg'],
-  '336': ['C6 Bank', 'lg-c6.jpg'],
-  '341': ['Itaú', 'lg-i.jpg'],
-  '399': ['HSBC', 'lg-hsb.jpg'],
-  '422': ['Safra', 'lg-safra.jpg'],
-  '655': ['Votorantim', 'lg-vot.jpg'],
-  '707': ['Daycoval', 'lg-day.jpg'],
-  '745': ['Citi', 'lg-citi.jpg'],
-  '756': ['Sicoob', 'lg-sic.jpg']
+const BANKS: Record<string, string> = {
+  '001': 'Banco do Brasil',
+  '033': 'Santander',
+  '104': 'Caixa',
+  '237': 'Bradesco',
+  '336': 'C6 Bank',
+  '341': 'Itaú',
+  '399': 'HSBC',
+  '422': 'Safra',
+  '655': 'Votorantim',
+  '707': 'Daycoval',
+  '745': 'Citi',
+  '756': 'Sicoob'
 };
 
-export function bankInfo(code: unknown): { code: string; name: string; image: string } {
+export function bankInfo(code: unknown): { code: string; name: string } {
   const normalized = String(code || '').padStart(3, '0');
-  const [name, image] = BANKS[normalized] || ['Banco', ''];
-  return { code: normalized, name, image };
+  return { code: normalized, name: BANKS[normalized] || 'Banco' };
 }
 
 export const ENABLED_BANKS = new Set(Object.keys(BANKS));

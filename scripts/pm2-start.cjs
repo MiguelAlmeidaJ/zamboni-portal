@@ -57,9 +57,8 @@ async function main() {
     for (const conflict of conflicts) {
       console.error(`- ${conflict.name}: 127.0.0.1:${conflict.port}`);
     }
-    console.error('\nDocker e PM2 não podem executar os mesmos aplicativos simultaneamente.');
-    console.error('Para trocar do Docker para PM2, execute: `pnpm pm2:takeover`.');
-    console.error('Para manter o Docker, use: `docker compose ps`.');
+    console.error('\nFinalize o processo que está usando a porta ou altere FRONTEND_PORT/API_PORT no `.env`.');
+    console.error('No Windows, consulte o PID com `Get-NetTCPConnection -State Listen`.');
     process.exitCode = 1;
     return;
   }

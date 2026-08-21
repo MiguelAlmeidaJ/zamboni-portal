@@ -3,7 +3,6 @@ import { config } from './config.js';
 import {
   bankInfo,
   ENABLED_BANKS,
-  encryptLegacy,
   formatCep,
   formatCnpj,
   formatDate,
@@ -59,11 +58,8 @@ export async function customerPortal(cnpj: string) {
   const rows = titlesResult.recordset;
   if (!rows.length) return null;
   const customer = rows[0];
-  const apiUrl = config.publicApiUrl;
-
   const titles = rows.filter((row) => ENABLED_BANKS.has(String(row.Cod_Banco).padStart(3, '0'))).map((row) => {
     const bank = bankInfo(row.Cod_Banco);
-    const hash = encryptLegacy(`${row.Num_Nosso_Num}#${row.Cod_Banco}#${row.EMPRESA}`);
     const invoices = [row.Num_Nota_Fiscal1, row.Num_Nota_Fiscal2].filter((value) => String(value || '').trim());
 
     return {
@@ -74,8 +70,7 @@ export async function customerPortal(cnpj: string) {
       vencimento: formatDate(row.Dat_Venc),
       notasFiscais: invoices.join(' / '),
       valor: formatMoney(row.Val_total),
-      moraDia: formatMoney(row.Juros_mora_dia),
-      boletoUrl: `${apiUrl}/boleto?hsh=${hash}`
+      moraDia: formatMoney(row.Juros_mora_dia)
     };
   });
 

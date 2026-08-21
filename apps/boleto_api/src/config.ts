@@ -16,7 +16,7 @@ function originsFromEnv(value: string | undefined): string[] {
 }
 
 function databaseAddress(value: string | undefined): { server: string; port?: number } {
-  const address = value || 'ZBN-PORTAL-PHP';
+  const address = value || 'localhost';
   const match = address.match(/^(.*),(\d+)$/);
 
   return match
@@ -24,18 +24,12 @@ function databaseAddress(value: string | undefined): { server: string; port?: nu
     : { server: address };
 }
 
-const publicApiUrl = new URL(process.env.API_PUBLIC_URL || 'http://localhost:3331').origin;
-
 export const config = {
-  nodeEnv: process.env.NODE_ENV || 'development',
   host: process.env.HOST || '0.0.0.0',
   port: numberFromEnv('PORT', 3331),
   frontendOrigins: originsFromEnv(process.env.FRONTEND_ORIGIN),
-  publicApiUrl,
-  legacyUrl: process.env.LEGACY_URL || 'http://boleto_legacy',
-  legacyToken: process.env.LEGACY_INTERNAL_TOKEN || '',
   sessionHours: numberFromEnv('SESSION_HOURS', 8),
-  cookieSecure: booleanFromEnv('COOKIE_SECURE', publicApiUrl.startsWith('https://')),
+  cookieSecure: booleanFromEnv('COOKIE_SECURE', false),
   trustProxy: booleanFromEnv('TRUST_PROXY', false),
   loginRateLimit: {
     maxAttempts: numberFromEnv('LOGIN_RATE_LIMIT_MAX', 10),
