@@ -2,8 +2,9 @@ import http from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { appendFile, mkdir } from 'node:fs/promises';
 import { config } from './config.js';
-import { authenticate, closePool, customerPortal } from './database.js';
+import { authenticate, closePool, customerPortal, legacyBoletoAccess } from './database.js';
 import { isValidCnpjShape, normalizeCnpj } from './formatters.js';
+import { fetchLegacyAsset, LegacyBoletoError, renderLegacyBoleto } from './legacy-boleto.js';
 import {
   createSession,
   deleteSession,
@@ -78,6 +79,16 @@ function json(
     ...headers
   });
   response.end(JSON.stringify(body));
+}
+
+function html(response: ServerResponse, status: number, body: string): void {
+  response.writeHead(status, {
+    ...securityHeaders,
+    'Content-Type': 'text/html; charset=utf-8',
+    'Content-Security-Policy': "default-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'self'",
+    'Cache-Control': 'no-store'
+  });
+  response.end(body);
 }
 
 async function bodyAsJson(request: IncomingMessage): Promise<Record<string, unknown>> {
@@ -219,6 +230,55 @@ const server = http.createServer(async (request, response) => {
       return;
     }
 
+
+    if (request.method === 'GET' && url.pathname === '/api/boleto-asset') {
+      const session = requireSession(request, response);
+      if (!session) return;
+
+      const file = String(url.searchParams.get('file') || '');
+      const asset = await fetchLegacyAsset(file);
+      response.writeHead(200, {
+        ...securityHeaders,
+        'Content-Type': asset.contentType,
+        'Cache-Control': 'private, max-age=86400',
+        'Content-Length': String(asset.body.length)
+      });
+      response.end(asset.body);
+      return;
+    }
+
+    if (request.method === 'GET' && url.pathname === '/api/boleto') {
+      const session = requireSession(request, response);
+      if (!session) return;
+
+      const nossoNumero = String(url.searchParams.get('nossoNumero') || '').trim().toUpperCase();
+      const banco = String(url.searchParams.get('banco') || '').trim().padStart(3, '0');
+      const empresa = String(url.searchParams.get('empresa') || '').trim().toUpperCase();
+
+      if (!/^[A-Z0-9]{1,40}$/.test(nossoNumero) || !/^\d{3}$/.test(banco) || !/^(MIXC|ZAMB)$/.test(empresa)) {
+        json(response, request, 400, { erro: 'Dados do boleto inválidos.' });
+        return;
+      }
+
+      const access = await legacyBoletoAccess(session.cnpj, nossoNumero, banco, empresa);
+      if (!access) {
+        json(response, request, 404, { erro: 'Boleto não encontrado para este cliente.' });
+        return;
+      }
+
+      const document = await renderLegacyBoleto({
+        cnpj: session.cnpj,
+        password: access.password,
+        nossoNumero,
+        banco,
+        empresa
+      });
+
+      await logAccess('log_boleto', session.cnpj, `Documento visualizado: ${nossoNumero}; Banco: ${banco}; Empresa: ${empresa}`);
+      html(response, 200, document);
+      return;
+    }
+
     if (request.method === 'GET' && url.pathname === '/api/session') {
       const session = requireSession(request, response);
       if (session) json(response, request, 200, await customerPortal(session.cnpj));
@@ -234,6 +294,10 @@ const server = http.createServer(async (request, response) => {
     json(response, request, 404, { erro: 'Rota não encontrada.' });
   } catch (error: unknown) {
     if (error instanceof HttpError) {
+      json(response, request, error.status, { erro: error.message });
+      return;
+    }
+    if (error instanceof LegacyBoletoError) {
       json(response, request, error.status, { erro: error.message });
       return;
     }

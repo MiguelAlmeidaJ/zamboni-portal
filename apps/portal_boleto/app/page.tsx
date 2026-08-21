@@ -79,7 +79,7 @@ function formatCnpjInput(value: string): string {
 
 async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers);
-  headers.set('Content-Type', 'application/json');
+  if (options.body) headers.set('Content-Type', 'application/json');
   const response = await fetch(`${API_URL}${path}`, {
     ...options,
     credentials: 'include',
@@ -88,6 +88,15 @@ async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const body = await response.json() as T & { erro?: string };
   if (!response.ok) throw new Error(body.erro || 'Não foi possível concluir a solicitação.');
   return body;
+}
+
+function boletoHref(title: PortalData['titulos'][number]): string {
+  const params = new URLSearchParams({
+    nossoNumero: title.nossoNumero,
+    banco: title.banco.code,
+    empresa: title.empresa
+  });
+  return `${API_URL.replace(/\/$/, '')}/api/boleto?${params.toString()}`;
 }
 
 function Header({ authenticated, onLogout }: { authenticated: boolean; onLogout: () => void }) {
@@ -187,6 +196,7 @@ function Results({ data }: { data: PortalData }) {
               <div className="number"><small>Nosso número</small><strong>{title.nossoNumero}</strong><span>{title.empresa}</span></div>
               <div className="title-meta"><div><small>Emissão</small><strong>{title.emissao}</strong></div><div><small>Vencimento</small><strong>{title.vencimento}</strong></div><div><small>Nota(s) fiscal(is)</small><strong>{title.notasFiscais || '—'}</strong></div></div>
               <div className="amount"><small>Valor</small><strong>R$ {title.valor}</strong><span>Mora/dia: R$ {title.moraDia}</span></div>
+              <a className="boleto-link" href={boletoHref(title)} target="_blank" rel="noopener noreferrer" aria-label={`Visualizar boleto ${title.nossoNumero}`}><Icon name="document"/>Visualizar boleto</a>
             </article>
           ))}
           {!data.titulos.length && <div className="empty">Nenhum título disponível para visualização.</div>}
