@@ -1,0 +1,87 @@
+services:
+  portal_boleto:
+    container_name: portal_boleto
+    build:
+      context: .
+      dockerfile: apps/portal_boleto/Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: "${NEXT_PUBLIC_API_URL:-http://localhost:3331}"
+    image: portal_boleto:local
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-3330}:3330"
+    depends_on:
+      boleto_api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3330').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  boleto_api:
+    container_name: boleto_api
+    build:
+      context: .
+      dockerfile: apps/boleto_api/Dockerfile
+    image: boleto_api:local
+    ports:
+      - "127.0.0.1:${API_PORT:-3331}:3331"
+    environment:
+      NODE_ENV: "production"
+      PORT: "3331"
+      HOST: "0.0.0.0"
+      FRONTEND_ORIGIN: "${FRONTEND_ORIGIN:-http://localhost:3330}"
+      API_PUBLIC_URL: "${API_PUBLIC_URL:-http://localhost:3331}"
+      COOKIE_SECURE: "${COOKIE_SECURE:-false}"
+      TRUST_PROXY: "${TRUST_PROXY:-false}"
+      LOGIN_RATE_LIMIT_MAX: "${LOGIN_RATE_LIMIT_MAX:-10}"
+      LOGIN_RATE_LIMIT_WINDOW_SECONDS: "${LOGIN_RATE_LIMIT_WINDOW_SECONDS:-900}"
+      LEGACY_URL: "http://boleto_legacy"
+      LEGACY_INTERNAL_TOKEN: "${LEGACY_INTERNAL_TOKEN}"
+      LOG_DIR: "/app/log"
+      DB_HOST: "${DB_HOST:-ZBN-PORTAL-PHP}"
+      DB_NAME: "${DB_NAME:-BOLETO}"
+      DB_USER: "${DB_USER:-sa}"
+      DB_PASSWORD: "${DB_PASSWORD:-}"
+      DB_ENCRYPT: "${DB_ENCRYPT:-true}"
+      DB_TRUST_CERTIFICATE: "${DB_TRUST_CERTIFICATE:-true}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./logs:/app/log
+    depends_on:
+      boleto_legacy:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3331/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  boleto_legacy:
+    container_name: boleto_legacy
+    build:
+      context: .
+      args:
+        SQLSRV_VERSION: "5.12.0"
+    image: boleto_legacy:local
+    ports:
+      - "127.0.0.1:${LEGACY_PORT:-8082}:80"
+    environment:
+      LEGACY_INTERNAL_TOKEN: "${LEGACY_INTERNAL_TOKEN}"
+      DB_HOST: "${DB_HOST:-ZBN-PORTAL-PHP}"
+      DB_NAME: "${DB_NAME:-BOLETO}"
+      DB_USER: "${DB_USER:-sa}"
+      DB_PASSWORD: "${DB_PASSWORD:-}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ./via2:/var/www/html/via2
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://127.0.0.1/via2/') === false ? 1 : 0);"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s

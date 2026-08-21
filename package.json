@@ -1,0 +1,25 @@
+{
+  "name": "portal-boleto-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@11.22.0",
+  "scripts": {
+    "dev:portal": "pnpm --filter portal_boleto dev",
+    "dev:api": "pnpm --filter boleto_api dev",
+    "build": "pnpm -r build",
+    "test": "pnpm --filter boleto_api test",
+    "typecheck": "pnpm -r typecheck",
+    "start": "pnpm --filter process_manager exec pm2-runtime start ../../ecosystem.config.cjs --env production",
+    "pm2:start": "node scripts/pm2-start.cjs",
+    "pm2:takeover": "docker compose stop portal_boleto boleto_api && node scripts/pm2-start.cjs",
+    "pm2:restart": "pnpm --filter process_manager exec pm2 restart ../../ecosystem.config.cjs --env production --update-env",
+    "pm2:stop": "pnpm --filter process_manager exec pm2 stop ../../ecosystem.config.cjs",
+    "pm2:status": "pnpm --filter process_manager exec pm2 status",
+    "pm2:update": "pnpm --filter process_manager exec pm2 update",
+    "pm2:logs": "pnpm --filter process_manager exec pm2 logs",
+    "pm2:delete": "pnpm --filter process_manager exec pm2 delete ../../ecosystem.config.cjs"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}

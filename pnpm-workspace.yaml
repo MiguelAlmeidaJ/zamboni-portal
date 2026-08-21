@@ -1,0 +1,9 @@
+packages:
+  - apps/*
+  - tools/*
+
+allowBuilds:
+  esbuild: true
+
+overrides:
+  "pm2>js-yaml": 4.3.1

@@ -1,0 +1,11 @@
+.env*
+!.env.example
+!.env.hml.example
+node_modules/
+.pnpm-store/
+.next/
+dist/
+*.tsbuildinfo
+.pm2/
+logs/*
+!logs/.gitkeep
