@@ -2,9 +2,9 @@ import http from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { appendFile, mkdir } from 'node:fs/promises';
 import { config } from './config.js';
-import { authenticate, closePool, customerPortal, legacyBoletoAccess } from './database.js';
+import { authenticate, boletoRecord, closePool, customerPortal } from './database.js';
 import { isValidCnpjShape, normalizeCnpj } from './formatters.js';
-import { fetchLegacyAsset, LegacyBoletoError, renderLegacyBoleto } from './legacy-boleto.js';
+import { BoletoError, renderBoleto } from './boleto.js';
 import {
   createSession,
   deleteSession,
@@ -231,22 +231,6 @@ const server = http.createServer(async (request, response) => {
     }
 
 
-    if (request.method === 'GET' && url.pathname === '/api/boleto-asset') {
-      const session = requireSession(request, response);
-      if (!session) return;
-
-      const file = String(url.searchParams.get('file') || '');
-      const asset = await fetchLegacyAsset(file);
-      response.writeHead(200, {
-        ...securityHeaders,
-        'Content-Type': asset.contentType,
-        'Cache-Control': 'private, max-age=86400',
-        'Content-Length': String(asset.body.length)
-      });
-      response.end(asset.body);
-      return;
-    }
-
     if (request.method === 'GET' && url.pathname === '/api/boleto') {
       const session = requireSession(request, response);
       if (!session) return;
@@ -260,20 +244,13 @@ const server = http.createServer(async (request, response) => {
         return;
       }
 
-      const access = await legacyBoletoAccess(session.cnpj, nossoNumero, banco, empresa);
-      if (!access) {
+      const record = await boletoRecord(session.cnpj, nossoNumero, banco, empresa);
+      if (!record) {
         json(response, request, 404, { erro: 'Boleto não encontrado para este cliente.' });
         return;
       }
 
-      const document = await renderLegacyBoleto({
-        cnpj: session.cnpj,
-        password: access.password,
-        nossoNumero,
-        banco,
-        empresa
-      });
-
+      const document = renderBoleto(record);
       await logAccess('log_boleto', session.cnpj, `Documento visualizado: ${nossoNumero}; Banco: ${banco}; Empresa: ${empresa}`);
       html(response, 200, document);
       return;
@@ -297,7 +274,7 @@ const server = http.createServer(async (request, response) => {
       json(response, request, error.status, { erro: error.message });
       return;
     }
-    if (error instanceof LegacyBoletoError) {
+    if (error instanceof BoletoError) {
       json(response, request, error.status, { erro: error.message });
       return;
     }

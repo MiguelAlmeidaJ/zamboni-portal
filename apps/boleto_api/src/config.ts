@@ -37,7 +37,6 @@ export const config = {
   },
   httpRequestTimeout: numberFromEnv('HTTP_REQUEST_TIMEOUT', 30000),
   logDir: process.env.LOG_DIR || '',
-  legacyBoletoBaseUrl: process.env.LEGACY_BOLETO_BASE_URL?.trim() || '',
   database: {
     ...databaseAddress(process.env.DB_HOST),
     database: process.env.DB_NAME || 'BOLETO',

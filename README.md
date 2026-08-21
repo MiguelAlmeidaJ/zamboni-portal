@@ -93,8 +93,9 @@ DB_ENCRYPT=true
 DB_TRUST_CERTIFICATE=false
 ```
 
-A consulta lista os títulos disponíveis no SQL Server. A emissão de um arquivo
-de cobrança não está implementada nesta versão e dependerá de uma fonte nativa
-ou URL disponibilizada pela base.
+A consulta lista os títulos disponíveis no SQL Server. A visualização e a
+impressão dos boletos são geradas nativamente pela API TypeScript a partir dos
+dados de `dbo.Boleto_Titulo_Ativo`, sem dependência do sistema PHP legado. Os
+layouts atualmente portados cobrem os bancos habilitados no portal.
 
 Consulte [SECURITY.md](SECURITY.md) antes de publicar o ambiente.

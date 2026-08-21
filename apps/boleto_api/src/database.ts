@@ -37,27 +37,27 @@ export async function authenticate(cnpj: string, password: string): Promise<'ok'
   return String(result.recordset[0].Senha_site) === String(password) ? 'ok' : 'invalid_password';
 }
 
-export async function legacyBoletoAccess(
+export async function boletoRecord(
   cnpj: string,
   nossoNumero: string,
   banco: string,
   empresa: string
-): Promise<{ password: string } | null> {
+): Promise<Record<string, unknown> | null> {
   const connection = await pool();
   const normalizedBank = String(banco).padStart(3, '0');
+  const normalizedCompany = String(empresa).trim().toUpperCase();
   const result = await requestFor(connection, cnpj)
     .input('nossoNumero', sql.VarChar, nossoNumero)
     .input('banco', sql.VarChar, normalizedBank)
-    .input('empresa', sql.VarChar, empresa)
-    .query(`SELECT TOP 1 Senha_site
+    .input('empresa', sql.VarChar, normalizedCompany)
+    .query(`SELECT TOP 1 *
       FROM dbo.Boleto_Titulo_Ativo
       WHERE Cgc_Cpf_Cliente = @cnpj
         AND LTRIM(RTRIM(CONVERT(varchar(40), Num_Nosso_Num))) = @nossoNumero
         AND RIGHT('000' + LTRIM(RTRIM(CONVERT(varchar(3), Cod_Banco))), 3) = @banco
-        AND LTRIM(RTRIM(CONVERT(varchar(4), EMPRESA))) = @empresa`);
+        AND UPPER(LTRIM(RTRIM(CONVERT(varchar(4), EMPRESA)))) = @empresa`);
 
-  const password = String(result.recordset[0]?.Senha_site || '');
-  return password ? { password } : null;
+  return (result.recordset[0] as Record<string, unknown> | undefined) || null;
 }
 
 export async function customerPortal(cnpj: string) {
